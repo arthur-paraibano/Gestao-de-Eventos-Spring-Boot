@@ -1,0 +1,191 @@
+-- Conexão: Usuário = Nome: sist_load Senha: Sistema123.
+
+-- Plataforma de Gestão de Eventos com Vendas de Ingressos
+-- Modelo de Banco de Dados - MySQL
+-- Versão: 4.0 (IDs dedicados em todas as tabelas)
+-- Autor: Arthur
+
+-- Deleta as tabelas se já existirem para permitir a recriação limpa do zero.
+-- CUIDADO: Use apenas em ambiente de desenvolvimento.
+DROP TABLE IF EXISTS `tb_payments`;
+DROP TABLE IF EXISTS `tb_tickets`;
+DROP TABLE IF EXISTS `tb_order_items`;
+DROP TABLE IF EXISTS `tb_orders`;
+DROP TABLE IF EXISTS `tb_ticket_lots`;
+DROP TABLE IF EXISTS `tb_ticket_types`;
+DROP TABLE IF EXISTS `tb_event_category_map`;
+DROP TABLE IF EXISTS `tb_event_categories`;
+DROP TABLE IF EXISTS `tb_events`;
+DROP TABLE IF EXISTS `tb_addresses`;
+DROP TABLE IF EXISTS `tb_user_roles`;
+DROP TABLE IF EXISTS `tb_roles`;
+DROP TABLE IF EXISTS `tb_users`;
+
+
+-- =============================================
+-- Módulo de Autenticação e Usuários
+-- =============================================
+
+CREATE TABLE `tb_users` (
+  `id_tb_users` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `tb_users_name` VARCHAR(255) NOT NULL,
+  `tb_users_email` VARCHAR(255) NOT NULL UNIQUE,
+  `tb_users_password_hash` VARCHAR(255) NOT NULL,
+  `tb_users_phone_number` VARCHAR(20),
+  `tb_users_created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `tb_users_updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE `tb_roles` (
+  `id_tb_roles` INT AUTO_INCREMENT PRIMARY KEY,
+  `tb_roles_name` VARCHAR(50) NOT NULL UNIQUE -- Ex: 'ADMIN', 'ORGANIZER', 'USER'
+);
+
+CREATE TABLE `tb_user_roles` (
+  `id_tb_user_roles` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `tb_user_roles_fk_id_tb_users` BIGINT NOT NULL,
+  `tb_user_roles_fk_id_tb_roles` INT NOT NULL,
+  FOREIGN KEY (`tb_user_roles_fk_id_tb_users`) REFERENCES `tb_users`(`id_tb_users`) ON DELETE CASCADE,
+  FOREIGN KEY (`tb_user_roles_fk_id_tb_roles`) REFERENCES `tb_roles`(`id_tb_roles`) ON DELETE CASCADE,
+  UNIQUE KEY `uk_user_role` (`tb_user_roles_fk_id_tb_users`, `tb_user_roles_fk_id_tb_roles`) -- Garante que a combinação usuário/papel seja única
+);
+
+
+-- =============================================
+-- Módulo de Eventos
+-- =============================================
+
+CREATE TABLE `tb_addresses` (
+  `id_tb_addresses` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `tb_addresses_street` VARCHAR(255) NOT NULL,
+  `tb_addresses_number` VARCHAR(20),
+  `tb_addresses_complement` VARCHAR(100),
+  `tb_addresses_city` VARCHAR(100) NOT NULL,
+  `tb_addresses_state` VARCHAR(50) NOT NULL,
+  `tb_addresses_zip_code` VARCHAR(10) NOT NULL,
+  `tb_addresses_latitude` DECIMAL(10, 8),
+  `tb_addresses_longitude` DECIMAL(11, 8)
+);
+
+CREATE TABLE `tb_events` (
+  `id_tb_events` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `tb_events_fk_id_tb_users` BIGINT NOT NULL,
+  `tb_events_fk_id_tb_addresses` BIGINT NOT NULL,
+  `tb_events_name` VARCHAR(255) NOT NULL,
+  `tb_events_description` TEXT,
+  `tb_events_banner_image_url` VARCHAR(512),
+  `tb_events_start_date` DATETIME NOT NULL,
+  `tb_events_end_date` DATETIME NOT NULL,
+  `tb_events_status` ENUM('DRAFT', 'PUBLISHED', 'CANCELED', 'FINISHED') NOT NULL DEFAULT 'DRAFT',
+  `tb_events_created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `tb_events_updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`tb_events_fk_id_tb_users`) REFERENCES `tb_users`(`id_tb_users`) ON DELETE RESTRICT,
+  FOREIGN KEY (`tb_events_fk_id_tb_addresses`) REFERENCES `tb_addresses`(`id_tb_addresses`) ON DELETE RESTRICT
+);
+
+CREATE TABLE `tb_event_categories` (
+  `id_tb_event_categories` INT AUTO_INCREMENT PRIMARY KEY,
+  `tb_event_categories_name` VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE `tb_event_category_map` (
+  `id_tb_event_category_map` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `tb_event_category_map_fk_id_tb_events` BIGINT NOT NULL,
+  `tb_event_category_map_fk_id_tb_event_categories` INT NOT NULL,
+  FOREIGN KEY (`tb_event_category_map_fk_id_tb_events`) REFERENCES `tb_events`(`id_tb_events`) ON DELETE CASCADE,
+  FOREIGN KEY (`tb_event_category_map_fk_id_tb_event_categories`) REFERENCES `tb_event_categories`(`id_tb_event_categories`) ON DELETE CASCADE,
+  UNIQUE KEY `uk_event_category` (`tb_event_category_map_fk_id_tb_events`, `tb_event_category_map_fk_id_tb_event_categories`) -- Garante que a combinação evento/categoria seja única
+);
+
+
+-- =============================================
+-- Módulo de Ingressos e Lotes
+-- =============================================
+
+CREATE TABLE `tb_ticket_types` (
+    `id_tb_ticket_types` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `tb_ticket_types_fk_id_tb_events` BIGINT NOT NULL,
+    `tb_ticket_types_name` VARCHAR(100) NOT NULL,
+    `tb_ticket_types_description` VARCHAR(255),
+    `tb_ticket_types_total_quantity` INT NOT NULL,
+    FOREIGN KEY (`tb_ticket_types_fk_id_tb_events`) REFERENCES `tb_events`(`id_tb_events`) ON DELETE CASCADE
+);
+
+CREATE TABLE `tb_ticket_lots` (
+    `id_tb_ticket_lots` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `tb_ticket_lots_fk_id_tb_ticket_types` BIGINT NOT NULL,
+    `tb_ticket_lots_name` VARCHAR(100) NOT NULL,
+    `tb_ticket_lots_price` DECIMAL(10, 2) NOT NULL,
+    `tb_ticket_lots_quantity` INT NOT NULL,
+    `tb_ticket_lots_sale_start_date` DATETIME NOT NULL,
+    `tb_ticket_lots_sale_end_date` DATETIME NOT NULL,
+    FOREIGN KEY (`tb_ticket_lots_fk_id_tb_ticket_types`) REFERENCES `tb_ticket_types`(`id_tb_ticket_types`) ON DELETE CASCADE
+);
+
+
+-- =============================================
+-- Módulo de Vendas e Pagamentos
+-- =============================================
+
+CREATE TABLE `tb_orders` (
+  `id_tb_orders` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `tb_orders_fk_id_tb_users` BIGINT NOT NULL,
+  `tb_orders_total_amount` DECIMAL(10, 2) NOT NULL,
+  `tb_orders_status` ENUM('PENDING', 'PAID', 'CANCELED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
+  `tb_orders_created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `tb_orders_updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`tb_orders_fk_id_tb_users`) REFERENCES `tb_users`(`id_tb_users`) ON DELETE RESTRICT
+);
+
+CREATE TABLE `tb_order_items` (
+  `id_tb_order_items` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `tb_order_items_fk_id_tb_orders` BIGINT NOT NULL,
+  `tb_order_items_fk_id_tb_ticket_lots` BIGINT NOT NULL,
+  `tb_order_items_quantity` INT NOT NULL,
+  `tb_order_items_unit_price` DECIMAL(10, 2) NOT NULL,
+  FOREIGN KEY (`tb_order_items_fk_id_tb_orders`) REFERENCES `tb_orders`(`id_tb_orders`) ON DELETE CASCADE,
+  FOREIGN KEY (`tb_order_items_fk_id_tb_ticket_lots`) REFERENCES `tb_ticket_lots`(`id_tb_ticket_lots`) ON DELETE RESTRICT
+);
+
+CREATE TABLE `tb_tickets` (
+  `id_tb_tickets` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `tb_tickets_fk_id_tb_order_items` BIGINT NOT NULL,
+  `tb_tickets_fk_id_tb_users` BIGINT NOT NULL,
+  `tb_tickets_fk_id_tb_events` BIGINT NOT NULL,
+  `tb_tickets_qr_code_hash` VARCHAR(255) NOT NULL UNIQUE,
+  `tb_tickets_status` ENUM('VALID', 'USED', 'CANCELED') NOT NULL DEFAULT 'VALID',
+  `tb_tickets_created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `tb_tickets_updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`tb_tickets_fk_id_tb_order_items`) REFERENCES `tb_order_items`(`id_tb_order_items`) ON DELETE CASCADE,
+  FOREIGN KEY (`tb_tickets_fk_id_tb_users`) REFERENCES `tb_users`(`id_tb_users`) ON DELETE RESTRICT,
+  FOREIGN KEY (`tb_tickets_fk_id_tb_events`) REFERENCES `tb_events`(`id_tb_events`) ON DELETE CASCADE
+);
+
+CREATE TABLE `tb_payments` (
+  `id_tb_payments` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `tb_payments_fk_id_tb_orders` BIGINT NOT NULL,
+  `tb_payments_gateway` ENUM('STRIPE', 'MERCADO_PAGO', 'PIX') NOT NULL,
+  `tb_payments_gateway_transaction_id` VARCHAR(255) NOT NULL,
+  `tb_payments_status` ENUM('PENDING', 'APPROVED', 'REJECTED', 'REFUNDED') NOT NULL,
+  `tb_payments_payment_details` JSON,
+  `tb_payments_created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `tb_payments_updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`tb_payments_fk_id_tb_orders`) REFERENCES `tb_orders`(`id_tb_orders`) ON DELETE RESTRICT
+);
+
+
+-- =============================================
+-- Índices para Otimização de Consultas
+-- =============================================
+
+CREATE INDEX `idx_users_email` ON `tb_users`(`tb_users_email`);
+CREATE INDEX `idx_events_organizer_id` ON `tb_events`(`tb_events_fk_id_tb_users`);
+CREATE INDEX `idx_events_start_date` ON `tb_events`(`tb_events_start_date`);
+CREATE INDEX `idx_tickets_user_id` ON `tb_tickets`(`tb_tickets_fk_id_tb_users`);
+CREATE INDEX `idx_tickets_event_id` ON `tb_tickets`(`tb_tickets_fk_id_tb_events`);
+CREATE INDEX `idx_tickets_qr_code_hash` ON `tb_tickets`(`tb_tickets_qr_code_hash`);
+CREATE INDEX `idx_orders_user_id` ON `tb_orders`(`tb_orders_fk_id_tb_users`);
+CREATE INDEX `idx_payments_gateway_transaction_id` ON `tb_payments`(`tb_payments_gateway_transaction_id`);
+
+-- Populando papéis básicos
+INSERT INTO `tb_roles` (`tb_roles_name`) VALUES ('ADMIN'), ('ORGANIZER'), ('USER');
