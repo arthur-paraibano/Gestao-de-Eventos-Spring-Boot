@@ -28,7 +28,7 @@ public class PaymentModel extends RepresentationModel<PaymentModel> implements S
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_tb_payments")
-    private Long id;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "tb_payments_fk_id_tb_orders", referencedColumnName = "id_tb_orders", nullable = false)
