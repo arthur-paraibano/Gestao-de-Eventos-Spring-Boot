@@ -14,14 +14,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
 @Entity
 @Table(name = "tb_ticket_lots", catalog = "database_plataforma_evento")
 public class TicketLotModel extends RepresentationModel<TicketLotModel> implements Serializable {
+
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -48,4 +45,63 @@ public class TicketLotModel extends RepresentationModel<TicketLotModel> implemen
 
     @Column(name = "tb_ticket_lots_sale_end_date", nullable = false)
     private LocalDateTime saleEndDate;
+
+    public TicketLotModel() {
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public TicketTypeModel getTicketType() {
+        return ticketType;
+    }
+
+    public void setTicketType(TicketTypeModel ticketType) {
+        this.ticketType = ticketType;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public LocalDateTime getSaleStartDate() {
+        return saleStartDate;
+    }
+
+    public void setSaleStartDate(LocalDateTime saleStartDate) {
+        this.saleStartDate = saleStartDate;
+    }
+
+    public LocalDateTime getSaleEndDate() {
+        return saleEndDate;
+    }
+
+    public void setSaleEndDate(LocalDateTime saleEndDate) {
+        this.saleEndDate = saleEndDate;
+    }
 }

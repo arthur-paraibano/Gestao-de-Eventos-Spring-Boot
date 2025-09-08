@@ -13,14 +13,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
 @Entity
 @Table(name = "tb_user_roles", catalog = "database_plataforma_evento")
 public class UserRolesModel extends RepresentationModel<UserRolesModel> implements Serializable {
+
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -36,4 +33,28 @@ public class UserRolesModel extends RepresentationModel<UserRolesModel> implemen
     @ManyToOne
     @JoinColumn(name = "tb_user_roles_fk_id_tb_roles", referencedColumnName = "id_tb_roles", nullable = false)
     private RolesModel roles;
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public UserModel getUser() {
+        return user;
+    }
+
+    public void setUser(UserModel user) {
+        this.user = user;
+    }
+
+    public RolesModel getRoles() {
+        return roles;
+    }
+
+    public void setRoles(RolesModel roles) {
+        this.roles = roles;
+    }
 }

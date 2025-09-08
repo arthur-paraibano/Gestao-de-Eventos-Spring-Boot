@@ -11,14 +11,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
 @Entity
 @Table(name = "tb_roles", catalog = "database_plataforma_evento")
 public class RolesModel extends RepresentationModel<RolesModel> implements Serializable {
+
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -29,4 +26,23 @@ public class RolesModel extends RepresentationModel<RolesModel> implements Seria
 
     @Column(name = "tb_roles_name", nullable = false, unique = true)
     private String name;
+
+    public RolesModel() {
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 }
