@@ -1,5 +1,7 @@
 package com.ingressos.api.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -7,5 +9,5 @@ import com.ingressos.api.model.TicketTypeModel;
 
 @Repository
 public interface TicketTypeRepository extends JpaRepository<TicketTypeModel, Integer> {
-
+    List<TicketTypeModel> findByEvent_Id(Long eventId);
 }
